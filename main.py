@@ -50,6 +50,7 @@ def Stop():
     mB.run(0)
 
 def DriveButtons():
+    global rData
     buttons = brick.buttons()
     if Button.CENTER in buttons:
         rData.running = not rData.running
@@ -63,11 +64,12 @@ def DriveButtons():
         rData.SetMode(DRIVE_MODE_UPRIGHT)
 
 def FlipUpright():
-    mD.run_target(400, rData.startingRot)
+    mD.run_target(400, rData.startingRot, Stop.COAST, False)
 def FlipUpsideDown():
-    mD.run_target(400, rData.startingRot + 179)
+    mD.run_target(400, rData.startingRot + 179, Stop.COAST, False)
 
 def DriveLogic():
+    global rData
     if rData.running:
         if rData.mode == DRIVE_MODE_FORWARD:
             Drive(FORWARD_SPEED)
