@@ -63,10 +63,10 @@ def DriveButtons():
     if Button.RIGHT in buttons:
         rData.SetMode(DRIVE_MODE_UPRIGHT)
 
-def FlipUpright():
-    mD.run_target(400, rData.startingRot, Stop.COAST, False)
-def FlipUpsideDown():
-    mD.run_target(400, rData.startingRot + 179, Stop.COAST, False)
+def FlipUpright(waitValue):
+    mD.run_target(400, rData.startingRot, waitValue)
+def FlipUpsideDown(waitValue):
+    mD.run_target(400, rData.startingRot + 190, waitValue)
 
 def DriveLogic():
     global rData
@@ -88,10 +88,14 @@ def DriveLogic():
 
 def DrivingLoop():
     while True:
-        DriveLogic()
+        #DriveLogic()
+        FlipUpsideDown(True)
+        FlipUpright(True)
 
 t = Thread(target = DrivingLoop)
 t.start()
 
 while True:
-    DriveButtons()
+    print("RUNNING")
+    #Drive(FORWARD_SPEED)
+    #DriveButtons()
