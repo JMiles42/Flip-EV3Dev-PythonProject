@@ -95,6 +95,7 @@ def DrivingLoop():
     while True:
         FlipUpsideDown(True)
         FlipUpright(True)
+        wait(2000)
 
 t = Thread(target = DrivingLoop)
 t.start()
