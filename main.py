@@ -16,8 +16,9 @@ DRIVE_MODE_RIGHT = 4
 DRIVE_MODE_STOP = 5
 DRIVE_MODE_UPRIGHT = 6
 DRIVE_MODE_UPSIDEDOWN = 7
-FORWARD_SPEED = 400
+FORWARD_SPEED = 200
 TURN_SPEED = 100
+FLIP_SPEED = 200
 
 class RobotData:
     mode = DRIVE_MODE_STOP
@@ -34,6 +35,10 @@ class RobotData:
 mA = Motor(Port.A)
 mB = Motor(Port.B)
 mD = Motor(Port.D)
+
+sD = UltrasonicSensor(Port.S1)
+sF = UltrasonicSensor(Port.S2)
+sR = GyroSensor(Port.S4)
 
 rData = RobotData(DRIVE_MODE_STOP, False, mD.angle())
 
@@ -64,9 +69,9 @@ def DriveButtons():
         rData.SetMode(DRIVE_MODE_UPRIGHT)
 
 def FlipUpright(waitValue):
-    mD.run_target(400, rData.startingRot, waitValue)
+    mD.run_target(FLIP_SPEED, rData.startingRot, waitValue)
 def FlipUpsideDown(waitValue):
-    mD.run_target(400, rData.startingRot + 190, waitValue)
+    mD.run_target(FLIP_SPEED, rData.startingRot + 190, waitValue)
 
 def DriveLogic():
     global rData
@@ -88,7 +93,6 @@ def DriveLogic():
 
 def DrivingLoop():
     while True:
-        #DriveLogic()
         FlipUpsideDown(True)
         FlipUpright(True)
 
@@ -96,6 +100,10 @@ t = Thread(target = DrivingLoop)
 t.start()
 
 while True:
-    print("RUNNING")
-    #Drive(FORWARD_SPEED)
-    #DriveButtons()
+    if(sD.distance() < 70 and sF.distance() > 100):
+        rData.SetMode(DRIVE_MODE_FORWARD)
+        rData.running = True
+    else:
+        rData.SetMode(DRIVE_MODE_STOP)
+        rData.running = False
+    DriveLogic()
