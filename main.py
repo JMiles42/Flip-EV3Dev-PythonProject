@@ -7,6 +7,7 @@ from pybricks.parameters import (Port, Stop, Direction, Button, Color,
                                  SoundFile, ImageFile, Align)
 from pybricks.tools import print, wait, StopWatch
 from pybricks.robotics import DriveBase
+from threading import Thread
 
 DRIVE_MODE_FORWARD = 1
 DRIVE_MODE_BACKWARD = 2
