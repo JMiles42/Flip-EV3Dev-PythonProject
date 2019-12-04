@@ -121,8 +121,8 @@ while True:
     if hasRotation:
         RotateTo()
 
-    canDriveFwd = not sF.distance() > 100
-    isACliff = not sD.distance() < 70
+    canDriveFwd = not (sF.distance() > 100)
+    isACliff = not (sD.distance() < 70)
 
     if isACliff:
         rData.SetMode(DRIVE_MODE_LEFT)
