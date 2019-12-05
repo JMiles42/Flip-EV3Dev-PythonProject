@@ -16,124 +16,158 @@ DRIVE_MODE_RIGHT = 4
 DRIVE_MODE_STOP = 5
 DRIVE_MODE_UPRIGHT = 6
 DRIVE_MODE_UPSIDEDOWN = 7
+
 FORWARD_SPEED = 200
 TURN_SPEED = 100
 FLIP_SPEED = 200
 MOVEMENT_DURATION = 100
 
 class RobotData:
-    mode = DRIVE_MODE_STOP
+    currentDriveMode = DRIVE_MODE_STOP
     running = False
-    startingRot = 0
-    rotation = 0
+    startingRot = 0.0
+    rotation = 0.0
     xVal = 0
+    totalTurnValues = 0
+    seesAWall = False
+    seesACliff = False
+    wantedRotation = 0.0
+    hasWantedRotation = False
+    isAvoidingObstacles = False
+
     def __init__(self, _mode, _running, _rotation):
-        self.mode = _mode
+        self.currentDriveMode = _mode
         self.running = _running
         self.startingRot = _rotation
+
     def SetMode(self, _modeNum):
-        self.mode = _modeNum
+        self.currentDriveMode = _modeNum
+    def SeesObstacles(self):
+        return self.seesACliff or self.seesAWall
 
+#Init motors
+motorA = Motor(Port.A)
+motorB = Motor(Port.B)
+motorD = Motor(Port.D)
 
-mA = Motor(Port.A)
-mB = Motor(Port.B)
-mD = Motor(Port.D)
+#Init sensors
+ultrasonicDown = UltrasonicSensor(Port.S1)
+ultrasonicFront = UltrasonicSensor(Port.S2)
+gyrosensor = GyroSensor(Port.S4)
+gyrosensor.reset_angle(0)
 
-sD = UltrasonicSensor(Port.S1)
-sF = UltrasonicSensor(Port.S2)
-sR = GyroSensor(Port.S4)
-sR.reset_angle()
+#Init data container
+robotData = RobotData(DRIVE_MODE_STOP, True, motorD.angle())
 
-rData = RobotData(DRIVE_MODE_STOP, False, mD.angle())
-
+#Drives the vehicle at a set speed
 def Drive(speed):
-    mA.run(speed)
-    mB.run(speed)
+    motorA.run(speed)
+    motorB.run(speed)
 
-def Drive(speed, time):
-    mA.run_time(speed, MOVEMENT_DURATION)
-    mB.run_time(speed, MOVEMENT_DURATION)
+#Drives the vehicle at a speed for a time
+def DriveTimed(speed, time):
+    motorA.run_time(speed, MOVEMENT_DURATION)
+    motorB.run_time(speed, MOVEMENT_DURATION)
 
+#Turns the vehicle at a speed
 def Turn(turnSpeed):
-    mA.run(-turnSpeed)
-    mB.run(turnSpeed)
-
-def Turn(turnSpeed):
-    mA.run_time(-turnSpeed, MOVEMENT_DURATION)
-    mB.run_time(turnSpeed, MOVEMENT_DURATION)
+    motorA.run(-turnSpeed)
+    motorB.run(turnSpeed)
     
+#Stops the driveing motors    
 def Stop():
-    mA.run(0)
-    mB.run(0)
+    motorA.run(0)
+    motorB.run(0)
 
+#Flips the brick to the upright state
 def FlipUpright(waitValue):
-    mD.run_target(FLIP_SPEED, rData.startingRot, waitValue)
+    motorD.run_target(FLIP_SPEED, robotData.startingRot, waitValue)
 
+#Flips brick to upside down state
 def FlipUpsideDown(waitValue):
-    mD.run_target(FLIP_SPEED, rData.startingRot + 190, waitValue)
+    motorD.run_target(FLIP_SPEED, robotData.startingRot + 190, waitValue)
 
+#Old# Does basic drive logic based on the stored mode
 def DriveLogic():
-    global rData
-    if rData.running:
-        if rData.mode == DRIVE_MODE_FORWARD:
+    if (robotData.running):
+        if (robotData.currentDriveMode == DRIVE_MODE_FORWARD):
             Drive(FORWARD_SPEED)
-        elif rData.mode == DRIVE_MODE_BACKWARD:
+        elif (robotData.currentDriveMode == DRIVE_MODE_BACKWARD):
             Drive(-FORWARD_SPEED)
-        elif rData.mode == DRIVE_MODE_LEFT:
+        elif (robotData.currentDriveMode == DRIVE_MODE_LEFT):
             Turn(TURN_SPEED)
-        elif rData.mode == DRIVE_MODE_RIGHT:
+        elif (robotData.currentDriveMode == DRIVE_MODE_RIGHT):
             Turn(-TURN_SPEED)
-        elif rData.mode == DRIVE_MODE_UPRIGHT:
+        elif (robotData.currentDriveMode == DRIVE_MODE_UPRIGHT):
             FlipUpright()
-        elif rData.mode == DRIVE_MODE_UPSIDEDOWN:
+        elif (robotData.currentDriveMode == DRIVE_MODE_UPSIDEDOWN):
             FlipUpsideDown()
     else:
         Stop()
 
-def DrivingLoop():
+#Flips the brick forever
+def FlippingLoop():
     while True:
         FlipUpsideDown(True)
         FlipUpright(True)
-        wait(2000)
+        wait(1000)
 
-t = Thread(target = DrivingLoop)
-t.start()
-isAWall = False
-isACliff = False
-wantedRotation = 0
-hasWantedRotation = False
+#Rotates the vehicle to the wanted angle
+def RotateToStoredRotation():
+    currentRot = gyrosensor.angle()
+    differenceRot = currentRot - robotData.hasWantedRotation
 
-def RotateTo()
-    global hasWantedRotation
-    currentRot = sR.angle()
-    differenceRot = currentRot - hasWantedRotation
+    print(differenceRot)
 
-    if differenceRot < 0 or currentRot < -90:
-        TurnRight()
-    elif differenceRot > 0 or currentRot < 90:
-        TurnLeft()
-    else
-        hasRotation = False
-        rData.rotation = sR.angle()
-        hasWantedRotation = 0
-
-while True:
-    if hasRotation:
-        RotateTo()
-
-    canDriveFwd = not (sF.distance() > 100)
-    isACliff = not (sD.distance() < 70)
-
-    if isACliff:
-        rData.SetMode(DRIVE_MODE_LEFT)
-        rData.running = True
-
-        if not hasRotation:
-            wantedRotation = 90 + rData.rotation
-            hasRotation = True
-    elif canDriveFwd:
-        rData.SetMode(DRIVE_MODE_FORWARD)
+    if (differenceRot < 0):
+        print("not TURN_SPEED")
+        Turn(not TURN_SPEED)
+    elif (differenceRot > 0):
+        print("TURN_SPEED")
+        Turn(TURN_SPEED)
     else:
-        rData.SetMode(DRIVE_MODE_STOP)
-        rData.running = False
-    DriveLogic()
+        print("Stop Turn")
+        robotData.hasWantedRotation = False
+        robotData.rotation = gyrosensor.angle()
+
+#Checks the sensors and stores the resualts in the relivent variables
+def SensorChecks():
+    robotData.seesAWall = not (ultrasonicFront.distance() > 100)
+    robotData.seesACliff = not (ultrasonicDown.distance() < 70)
+
+#Sets the wanted rotation variables to current rotation plus the amount
+def SetWantedRotation(amount):
+    robotData.wantedRotation = amount + robotData.rotation
+    robotData.hasWantedRotation = True
+
+    if (amount > 0):
+        robotData.totalTurnValues -= 1
+    elif (amount < 0):
+        robotData.totalTurnValues += 1
+
+
+def main():
+    while True:
+        SensorChecks()
+        if (robotData.hasWantedRotation):
+            print("hasWantedRotation")
+            RotateToStoredRotation()
+        else:
+            seesObstacles = robotData.SeesObstacles()
+            if (seesObstacles) and (not robotData.isAvoidingObstacles):
+                robotData.isAvoidingObstacles = True            
+                SetWantedRotation(90)
+
+            if (not seesObstacles):
+                Drive(FORWARD_SPEED)
+                robotData.isAvoidingObstacles = False
+            else:
+                Stop()
+            DriveLogic()
+
+
+
+t = Thread(target = FlippingLoop)
+#t.start()
+
+main()
